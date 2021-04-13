@@ -1,21 +1,27 @@
-import React, { useState } from "react";
-import { connect } from "react-redux";
-import qs from "qs";
+import React, { useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import "../components/TodoList";
 import CompoleteList from "../components/CompoleteList";
 import { getDones } from "../modules/load";
 import { deleteTodo } from "../modules/send";
-
 const { useEffect } = React;
 
-const CompleteContainer = ({ getDones, deleteTodo, dones, todo }) => {
+const CompleteContainer = () => {
+  const { todo, dones } = useSelector(({ load, send }) => ({
+    dones: load.dones,
+    todo: send.todo,
+  }));
+  const dispatch = useDispatch();
+  const getList = useCallback(() => dispatch(getDones(), [dispatch]));
+  const deleteItem = useCallback((id) => dispatch(deleteTodo(id), [dispatch]));
+
   useEffect(() => {
-    getDones();
-  }, [getDones, todo]);
+    getList();
+  }, [todo]);
 
   const onRemove = async (id) => {
     try {
-      await deleteTodo(id);
+      await deleteItem(id);
       alert("할일을 삭제했습니다!");
     } catch (error) {
       console.log("e", error);
@@ -27,13 +33,4 @@ const CompleteContainer = ({ getDones, deleteTodo, dones, todo }) => {
     </>
   );
 };
-export default connect(
-  ({ load, send }) => ({
-    dones: load.dones,
-    todo: send.dones,
-  }),
-  {
-    getDones,
-    deleteTodo,
-  }
-)(CompleteContainer);
+export default React.memo(CompleteContainer);

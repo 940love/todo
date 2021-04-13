@@ -1,5 +1,5 @@
-import React from "react";
-import { connect } from "react-redux";
+import React, { useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import "../components/TodoList";
 import Input from "../components/Input";
 import TodoList from "../components/TodoList";
@@ -8,21 +8,28 @@ import { insertTodo, deleteTodo, updateTodo } from "../modules/send";
 
 const { useEffect } = React;
 
-const TodoContainer = ({
-  getTodos,
-  insertTodo,
-  deleteTodo,
-  updateTodo,
-  todos,
-  todo,
-}) => {
+const TodoContainer = () => {
+  const { todo, todos } = useSelector(({ load, send }) => ({
+    todos: load.todos,
+    todo: send.todo,
+  }));
+
+  const dispatch = useDispatch();
+  const getList = useCallback(() => dispatch(getTodos(), [dispatch]));
+  const insertItem = useCallback((text) =>
+    dispatch(insertTodo(text), [dispatch])
+  );
+  const deleteItem = useCallback((id) => dispatch(deleteTodo(id), [dispatch]));
+  const updateItem = useCallback(({ id, done }) =>
+    dispatch(updateTodo({ id, done }), [dispatch])
+  );
   useEffect(() => {
-    getTodos();
-  }, [getTodos, todo]);
+    getList();
+  }, [todo]);
 
   const onSubmit = async ({ text }) => {
     try {
-      await insertTodo({ text });
+      await insertItem({ text });
     } catch (error) {
       console.log("e", error);
     }
@@ -30,7 +37,7 @@ const TodoContainer = ({
 
   const onRemove = async (id) => {
     try {
-      await deleteTodo(id);
+      await deleteItem(id);
       alert("할일을 삭제했습니다!");
     } catch (error) {
       console.log("e", error);
@@ -40,7 +47,7 @@ const TodoContainer = ({
   const onToggle = async (todo) => {
     const { id, done, text } = todo;
     try {
-      await updateTodo({ id, done });
+      await updateItem({ id, done });
       alert(text + "를 수정했습니다!");
     } catch (error) {
       console.log("e", error);
@@ -53,15 +60,4 @@ const TodoContainer = ({
     </>
   );
 };
-export default connect(
-  ({ load, send }) => ({
-    todos: load.todos,
-    todo: send.todo,
-  }),
-  {
-    getTodos,
-    insertTodo,
-    deleteTodo,
-    updateTodo,
-  }
-)(TodoContainer);
+export default React.memo(TodoContainer);
